@@ -14,8 +14,13 @@ pub extern "C" fn _start() -> ! {
 
     rust_os::init();
 
-    // Test out a breakpoint interrupt
-    x86_64::instructions::interrupts::int3();
+    // // Triggers a breakpoint interrupt.
+    // x86_64::instructions::interrupts::int3();
+
+    // // Triggers a page fault exception.
+    // unsafe {
+    //     *(0xdeadbeef as *mut u8) = 42;
+    // }
 
     #[cfg(test)]
     test_main();
