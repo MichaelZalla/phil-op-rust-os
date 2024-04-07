@@ -6,28 +6,14 @@
 
 use core::panic::PanicInfo;
 
-use rust_os::println;
-
 #[no_mangle]
 pub extern "C" fn _start() -> ! {
-    println!("Hello world{}", "!");
-
-    #[cfg(test)]
     test_main();
 
     loop {}
 }
 
-#[cfg(not(test))]
 #[panic_handler]
 fn panic(info: &PanicInfo) -> ! {
-    println!("{}", info);
-
-    loop {}
-}
-
-#[cfg(test)]
-#[panic_handler]
-fn panic(info: &PanicInfo) -> ! {
-    rust_os::test_panic_handler(info);
+    rust_os::test_panic_handler(info)
 }
