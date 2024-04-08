@@ -1,4 +1,3 @@
-// use alloc::alloc::{GlobalAlloc, Layout};
 use x86_64::{
     structures::paging::{
         mapper::MapToError, FrameAllocator, Mapper, Page, PageTableFlags, Size4KiB,
@@ -6,9 +5,37 @@ use x86_64::{
     VirtAddr,
 };
 
-// use core::ptr::null_mut;
+use self::bump::BumpAllocator;
 
-use linked_list_allocator::LockedHeap;
+pub mod bump;
+
+pub struct Locked<T> {
+    inner: spin::Mutex<T>,
+}
+
+impl<T> Locked<T> {
+    pub const fn new(inner: T) -> Self {
+        Locked {
+            inner: spin::Mutex::new(inner),
+        }
+    }
+
+    pub fn lock(&self) -> spin::MutexGuard<T> {
+        self.inner.lock()
+    }
+}
+
+pub(self) fn align_up(address: usize, align: usize) -> usize {
+    // let remainder = address % align;
+
+    // if remainder == 0 {
+    //     address // address is already aligned
+    // } else {
+    //     address - remainder + align // next-closest aligned address
+    // }
+
+    (address + align - 1) & !(align - 1)
+}
 
 pub const HEAP_START: usize = 0x_4444_4444_0000;
 pub const HEAP_SIZE: usize = 100 * 1024; // 100 KiB
@@ -26,7 +53,7 @@ pub const HEAP_SIZE: usize = 100 * 1024; // 100 KiB
 // static ALLOCATOR: Dummy = Dummy;
 
 #[global_allocator]
-static ALLOCATOR: LockedHeap = LockedHeap::empty();
+static ALLOCATOR: Locked<BumpAllocator> = Locked::new(BumpAllocator::new());
 
 pub fn init_heap(
     mapper: &mut impl Mapper<Size4KiB>,
