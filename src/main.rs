@@ -8,7 +8,7 @@ extern crate alloc;
 
 use core::panic::PanicInfo;
 
-use alloc::boxed::Box;
+use alloc::{boxed::Box, rc::Rc, vec, vec::Vec};
 use bootloader::{entry_point, BootInfo};
 
 use rust_os::{
@@ -50,9 +50,48 @@ fn kernel_main(boot_info: &'static BootInfo) -> ! {
 
     allocator::init_heap(&mut mapper, &mut frame_allocator).expect("Heap initialization failed.");
 
-    let _x = Box::new(42);
+    let _heap_start = unsafe { *(HEAP_START as *const u32) };
 
-    let _y = unsafe { *(HEAP_START as *const u32) };
+    // Allocate a (boxed) i32 on our heap.
+
+    let heap_value = Box::new(42);
+    println!("Box<i32> at {:p}", heap_value);
+
+    // Allocate and grow a vec on our heap.
+
+    let mut vec = Vec::new();
+
+    for i in 0..500 {
+        vec.push(i);
+    }
+
+    println!("Vec<i32> at {:p}", vec.as_slice());
+
+    // Allocate a reference-counted vec.
+
+    let reference_counted = Rc::new(vec![1, 2, 3]);
+
+    println!("Rc<Vec<i32>> at {:p}", reference_counted);
+
+    // Cloned our reference to the (reference-counted) vec.
+
+    let cloned_reference = reference_counted.clone();
+
+    println!("Rc<Vec<i32>> (cloned) at {:p}", cloned_reference);
+
+    println!(
+        "Original reference count: {}",
+        Rc::strong_count(&cloned_reference)
+    );
+
+    // Drop the original reference, and inspect the reference count.
+
+    core::mem::drop(reference_counted);
+
+    println!(
+        "New reference count: {}",
+        Rc::strong_count(&cloned_reference)
+    );
 
     #[cfg(test)]
     test_main();
