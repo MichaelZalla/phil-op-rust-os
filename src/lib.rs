@@ -40,6 +40,12 @@ pub fn test_runner(tests: &[&dyn Testable]) {
     exit_qemu(QemuExitCode::Success);
 }
 
+pub fn hlt_loop() -> ! {
+    loop {
+        x86_64::instructions::hlt()
+    }
+}
+
 // Entrypoint for `cargo test --lib`
 #[cfg(test)]
 #[no_mangle]
@@ -48,7 +54,7 @@ pub extern "C" fn _start() -> ! {
 
     test_main();
 
-    loop {}
+    hlt_loop();
 }
 
 pub fn test_panic_handler(info: &PanicInfo) -> ! {
@@ -58,7 +64,7 @@ pub fn test_panic_handler(info: &PanicInfo) -> ! {
 
     exit_qemu(QemuExitCode::Failed);
 
-    loop {}
+    hlt_loop();
 }
 
 #[cfg(test)]
@@ -87,4 +93,6 @@ pub fn exit_qemu(exit_code: QemuExitCode) {
 pub fn init() {
     gdt::init();
     interrupts::init_idt();
+    unsafe { interrupts::PICS.lock().initialize() }
+    x86_64::instructions::interrupts::enable();
 }

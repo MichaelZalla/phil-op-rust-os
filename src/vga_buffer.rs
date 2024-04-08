@@ -150,8 +150,12 @@ macro_rules! println {
 #[doc(hidden)]
 pub fn _print(args: fmt::Arguments) {
     use core::fmt::Write;
+    use x86_64::instructions::interrupts;
 
-    WRITER.lock().write_fmt(args).unwrap();
+    // Ensures that no interrupts occur while we hold the mutex/lock.
+    interrupts::without_interrupts(|| {
+        WRITER.lock().write_fmt(args).unwrap();
+    });
 }
 
 #[test_case]
@@ -168,13 +172,21 @@ fn test_println_many() {
 
 #[test_case]
 fn test_println_output() {
+    use core::fmt::Write;
+    use x86_64::instructions::interrupts;
+
     let s = "Some test string that fits on a single line";
 
-    println!("{}", s); // output appears on the second-last line, due to newline
+    interrupts::without_interrupts(|| {
+        let mut writer = WRITER.lock();
 
-    for (i, c) in s.chars().enumerate() {
-        let screen_char = WRITER.lock().buffer.chars[BUFFER_HEIGHT - 2][i].read();
+        // Output appears on the second-last line, due to newline
+        writeln!(writer, "\n{}", s).expect("writeln failed");
 
-        assert_eq!(char::from(screen_char.ascii_character), c);
-    }
+        for (i, c) in s.chars().enumerate() {
+            let screen_char = writer.buffer.chars[BUFFER_HEIGHT - 2][i].read();
+
+            assert_eq!(char::from(screen_char.ascii_character), c);
+        }
+    });
 }
