@@ -8,19 +8,17 @@ use core::panic::PanicInfo;
 
 use bootloader::{entry_point, BootInfo};
 
-use rust_os::{memory::get_page_table_at_physical_addr, println};
+use rust_os::println;
 
 entry_point!(kernel_main);
 
 fn kernel_main(boot_info: &'static BootInfo) -> ! {
-    use rust_os::memory::get_active_level_4_table;
-    use x86_64::VirtAddr;
+    use rust_os::memory;
+    use x86_64::{structures::paging::Translate, VirtAddr};
 
     println!("Hello world{}", "!");
 
     rust_os::init();
-
-    // let (level_4_page_table, _cr3_flags) = Cr3::read();
 
     // println!(
     //     "Level 4 page table exists at: {:?}.",
@@ -45,35 +43,25 @@ fn kernel_main(boot_info: &'static BootInfo) -> ! {
 
     let physical_offset = VirtAddr::new(boot_info.physical_memory_offset);
 
-    let level_4_table = unsafe { get_active_level_4_table(physical_offset) };
+    let mapper = unsafe { memory::init(physical_offset) };
 
-    for (i, entry) in level_4_table.iter().enumerate() {
-        if !entry.is_unused() {
-            println!("L4 entry {}: {:?}", i, entry);
+    let addresses = [
+        // Memory-mapped VGA text buffer
+        0xb8000,
+        // Some code page
+        0x201008,
+        // Some stack page
+        0x0100_0020_1a10,
+        // Virtual address mapped to physical address 0
+        boot_info.physical_memory_offset,
+    ];
 
-            let physical_addr = entry.frame().unwrap().start_address();
+    for &addr in &addresses {
+        let virtual_addr = VirtAddr::new(addr);
 
-            let level_3_table =
-                unsafe { get_page_table_at_physical_addr(&physical_addr, &physical_offset) };
+        let physical_addr = mapper.translate(virtual_addr);
 
-            for (i, entry) in level_3_table.iter().enumerate() {
-                if !entry.is_unused() {
-                    println!("    L3 entry {}: {:?}", i, entry);
-
-                    // let physical_addr = entry.frame().unwrap().start_address();
-
-                    // let level_2_table = unsafe {
-                    //     get_page_table_at_physical_addr(&physical_addr, &physical_offset)
-                    // };
-
-                    // for (i, entry) in level_2_table.iter().enumerate() {
-                    //     if !entry.is_unused() {
-                    //         println!("        L2 entry {}: {:?}", i, entry);
-                    //     }
-                    // }
-                }
-            }
-        }
+        println!("{:?} -> {:?}", virtual_addr, physical_addr);
     }
 
     #[cfg(test)]
