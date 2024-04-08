@@ -4,11 +4,17 @@
 #![test_runner(rust_os::test_runner)]
 #![reexport_test_harness_main = "test_main"]
 
+extern crate alloc;
+
 use core::panic::PanicInfo;
 
+use alloc::boxed::Box;
 use bootloader::{entry_point, BootInfo};
 
-use rust_os::println;
+use rust_os::{
+    allocator::{self, HEAP_START},
+    println,
+};
 use x86_64::structures::paging::Page;
 
 entry_point!(kernel_main);
@@ -23,27 +29,6 @@ fn kernel_main(boot_info: &'static BootInfo) -> ! {
     println!("Hello world{}", "!");
 
     rust_os::init();
-
-    // println!(
-    //     "Level 4 page table exists at: {:?}.",
-    //     level_4_page_table.start_address()
-    // );
-
-    // // Triggers a breakpoint interrupt.
-    // x86_64::instructions::interrupts::int3();
-
-    // Triggers a page-fault exception.
-    // unsafe {
-    //     // *(0xdeadbeef as *mut u8) = 42;
-
-    //     let code_page = 0x204944 as *mut u8;
-
-    //     let _x = *code_page;
-    //     println!("Read worked!");
-
-    //     *code_page = 42;
-    //     println!("Write worked!");
-    // }
 
     let physical_offset = VirtAddr::new(boot_info.physical_memory_offset);
 
@@ -63,24 +48,11 @@ fn kernel_main(boot_info: &'static BootInfo) -> ! {
         page_ptr.offset(400).write_volatile(0x_f021_f077_f065_f04e);
     }
 
-    // let addresses = [
-    //     // Memory-mapped VGA text buffer
-    //     0xb8000,
-    //     // Some code page
-    //     0x201008,
-    //     // Some stack page
-    //     0x0100_0020_1a10,
-    //     // Virtual address mapped to physical address 0
-    //     boot_info.physical_memory_offset,
-    // ];
+    allocator::init_heap(&mut mapper, &mut frame_allocator).expect("Heap initialization failed.");
 
-    // for &addr in &addresses {
-    //     let virtual_addr = VirtAddr::new(addr);
+    let _x = Box::new(42);
 
-    //     let physical_addr = mapper.translate(virtual_addr);
-
-    //     println!("{:?} -> {:?}", virtual_addr, physical_addr);
-    // }
+    let _y = unsafe { *(HEAP_START as *const u32) };
 
     #[cfg(test)]
     test_main();
