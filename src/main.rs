@@ -14,13 +14,30 @@ pub extern "C" fn _start() -> ! {
 
     rust_os::init();
 
+    use x86_64::registers::control::Cr3;
+
+    let (level_4_page_table, _cr3_flags) = Cr3::read();
+
+    println!(
+        "Level 4 page table exists at: {:?}.",
+        level_4_page_table.start_address()
+    );
+
     // // Triggers a breakpoint interrupt.
     // x86_64::instructions::interrupts::int3();
 
-    // // Triggers a page fault exception.
-    // unsafe {
-    //     *(0xdeadbeef as *mut u8) = 42;
-    // }
+    // Triggers a page-fault exception.
+    unsafe {
+        // *(0xdeadbeef as *mut u8) = 42;
+
+        let code_page = 0x204944 as *mut u8;
+
+        let _x = *code_page;
+        println!("Read worked!");
+
+        *code_page = 42;
+        println!("Write worked!");
+    }
 
     #[cfg(test)]
     test_main();
