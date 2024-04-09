@@ -8,6 +8,7 @@ extern crate alloc;
 
 use alloc::boxed::Box;
 
+pub mod keyboard;
 pub mod simple_executor;
 
 // A type wrapper around a pinned, heap-allocated, dynamically dispatched
