@@ -12,7 +12,7 @@ use bootloader::{entry_point, BootInfo};
 
 use rust_os::{
     allocator, println,
-    task::{simple_executor::SimpleExecutor, Task},
+    task::{keyboard::print_keypresses_task, simple_executor::SimpleExecutor, Task},
 };
 use x86_64::structures::paging::Page;
 
@@ -50,10 +50,16 @@ fn kernel_main(boot_info: &'static BootInfo) -> ! {
     let mut executor = SimpleExecutor::new();
 
     // Moves a Future to the heap and pins it.
-    let first_task = Task::new(example_task());
+    let example_task_pinned = Task::new(example_task());
 
-    // Enqueues our task in the executor's work queue.
-    executor.spawn(first_task);
+    // Enqueues an example task in the executor's work queue.
+    executor.spawn(example_task_pinned);
+
+    // Moves a Future to the heap and pins it.
+    let print_keypresses_task_pinned = Task::new(print_keypresses_task());
+
+    // Enqueues a print-keypresses task.
+    executor.spawn(print_keypresses_task_pinned);
 
     // Polls tasks until all tasks are complete.
     executor.run();

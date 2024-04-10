@@ -5,10 +5,7 @@ use x86_64::{
     VirtAddr,
 };
 
-use self::{
-    bump::BumpAllocator, fixed_size_block::FixedSizeBlockAllocator,
-    linked_list::LinkedListAllocator,
-};
+use self::fixed_size_block::FixedSizeBlockAllocator;
 
 pub mod bump;
 pub mod fixed_size_block;
