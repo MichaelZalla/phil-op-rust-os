@@ -12,7 +12,7 @@ use bootloader::{entry_point, BootInfo};
 
 use rust_os::{
     allocator, println,
-    task::{keyboard::print_keypresses_task, simple_executor::SimpleExecutor, Task},
+    task::{executor::Executor, keyboard::print_keypresses_task, Task},
 };
 use x86_64::structures::paging::Page;
 
@@ -46,8 +46,8 @@ fn kernel_main(boot_info: &'static BootInfo) -> ! {
 
     allocator::init_heap(&mut mapper, &mut frame_allocator).expect("Heap initialization failed.");
 
-    // Initialize a simple task executor.
-    let mut executor = SimpleExecutor::new();
+    // Initializes our task executor.
+    let mut executor = Executor::new();
 
     // Moves a Future to the heap and pins it.
     let example_task_pinned = Task::new(example_task());
@@ -67,9 +67,9 @@ fn kernel_main(boot_info: &'static BootInfo) -> ! {
     #[cfg(test)]
     test_main();
 
-    println!("It didn't crash!");
+    // println!("It didn't crash!");
 
-    rust_os::hlt_loop();
+    // rust_os::hlt_loop();
 }
 
 async fn async_number() -> u32 {
