@@ -1,5 +1,5 @@
 # phil-op-rust-os
-Follow-along repository for Philipp Oppermann's "Writing an OS in Rust".
+Follow-along repository for Philipp Oppermann's blog series, [Writing an OS in Rust](https://os.phil-opp.com/).
 
 A freestanding binary that can boot off USB.
 
