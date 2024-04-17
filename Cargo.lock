@@ -66,6 +66,6 @@ dependencies = [
 
 [[package]]
 name = "volatile"
-version = "0.2.7"
+version = "0.5.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f6b06ad3ed06fef1713569d547cdbdb439eafed76341820fb0e0344f29a41945"
+checksum = "b214e6480cbaa16049d2f256268b51732a8d1e5507ac56392990604c7c71d936"
